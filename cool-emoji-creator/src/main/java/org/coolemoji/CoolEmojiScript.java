@@ -1,5 +1,6 @@
 package org.coolemoji;
 
+import org.apache.commons.io.IOUtils;
 import org.im4java.core.ConvertCmd;
 import org.im4java.core.IM4JavaException;
 import org.im4java.core.IMOperation;
@@ -41,36 +42,41 @@ public class CoolEmojiScript {
                 "Author=John Ericksen\n\n\n" +
                 "[default]");
 
-        scanSource(source, print);
+        scanSource(source, print, true);
 
 
     }
 
-    public static void scanSource(File source, PrintStream print) throws InterruptedException, IOException, IM4JavaException {
+    public static void scanSource(File source, PrintStream print, boolean resize) throws InterruptedException, IOException, IM4JavaException {
         for (File file : source.listFiles()) {
 
             if(file.isDirectory()){
-                scanSource(file, print);
+                scanSource(file, print, !file.getName().startsWith("_"));
             }
             else{
-                writeFile(file, print);
+                writeFile(file, print, resize);
             }
         }
     }
 
-    public static void writeFile(File input, PrintStream print) throws InterruptedException, IOException, IM4JavaException {
-        // create command
-        ConvertCmd cmd = new ConvertCmd();
+    public static void writeFile(File input, PrintStream print, boolean resize) throws InterruptedException, IOException, IM4JavaException {
+        if(resize){
+            // create command
+            ConvertCmd cmd = new ConvertCmd();
 
-        // create the operation, add images and operators/options
-        IMOperation op = new IMOperation();
-        op.addImage(input.getAbsolutePath());
-        op.resize(24, 24);
+            // create the operation, add images and operators/options
+            IMOperation op = new IMOperation();
+            op.addImage(input.getAbsolutePath());
+            op.resize(24, 24);
 
-        op.addImage(output.getAbsolutePath() + "/" + input.getName());
+            op.addImage(output.getAbsolutePath() + "/" + input.getName());
 
-        // execute the operation
-        cmd.run(op);
+            // execute the operation
+            cmd.run(op);
+        }
+        else{
+            IOUtils.copy(new FileInputStream(input), new FileOutputStream(new File(output.getAbsolutePath() + "/" + input.getName())));
+        }
 
         String name = input.getName().substring(0, input.getName().indexOf("."));
         print.println("emojis/" + input.getName() + "\t:" + name + ": " + (mappings.containsKey(input.getName()) ?  mappings.get(input.getName()) : ""));
